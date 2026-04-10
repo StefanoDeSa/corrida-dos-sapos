@@ -1,5 +1,6 @@
 package br.com.stefano.corridadossapos;
 
+import javax.swing.SwingUtilities;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +10,7 @@ public class Corrida {
     private final List<Sapo> sapos;
     private boolean corridaEncerrada;
     private Sapo vencedor;
+    private CorridaListener listener;
 
     public Corrida(int distanciaTotal) {
         this.distanciaTotal = distanciaTotal;
@@ -25,42 +27,38 @@ public class Corrida {
         return distanciaTotal;
     }
 
+    public List<Sapo> getSapos() {
+        return sapos;
+    }
+
     public synchronized boolean isCorridaEncerrada() {
         return corridaEncerrada;
+    }
+
+    public void setListener(CorridaListener listener) {
+        this.listener = listener;
+    }
+
+    public void notificarAtualizacao() {
+        if (listener != null) {
+            SwingUtilities.invokeLater(listener::aoAtualizarCorrida);
+        }
     }
 
     public synchronized void registrarVencedor(Sapo sapo) {
         if (!corridaEncerrada) {
             corridaEncerrada = true;
             vencedor = sapo;
-            System.out.println("\n🏆 O vencedor foi: " + sapo.getName() + "!\n");
+
+            if (listener != null) {
+                SwingUtilities.invokeLater(() -> listener.aoFinalizarCorrida(sapo));
+            }
         }
     }
 
     public void iniciarCorrida() {
-        System.out.println("=== CORRIDA DOS SAPOS ===");
-        System.out.println("Distância total: " + distanciaTotal + " metros");
-        System.out.println("Quantidade de sapos: " + sapos.size());
-        System.out.println();
-
         for (Sapo sapo : sapos) {
             sapo.start();
-        }
-
-        for (Sapo sapo : sapos) {
-            try {
-                sapo.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.out.println("A thread principal foi interrompida.");
-            }
-        }
-
-        System.out.println("=== FIM DA CORRIDA ===");
-        if (vencedor != null) {
-            System.out.println("Vencedor: " + vencedor.getName());
-        } else {
-            System.out.println("Nenhum vencedor foi definido.");
         }
     }
 }

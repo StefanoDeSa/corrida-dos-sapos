@@ -5,7 +5,7 @@ import java.util.Random;
 public class Sapo extends Thread {
 
     private final Corrida corrida;
-    private int distanciaPercorrida;
+    private volatile int distanciaPercorrida;
     private final Random random;
 
     public Sapo(String nome, Corrida corrida) {
@@ -15,27 +15,29 @@ public class Sapo extends Thread {
         this.random = new Random();
     }
 
+    public int getDistanciaPercorrida() {
+        return distanciaPercorrida;
+    }
+
     @Override
     public void run() {
         while (!corrida.isCorridaEncerrada()) {
             int salto = random.nextInt(5) + 1;
             distanciaPercorrida += salto;
 
-            int distanciaExibida = Math.min(distanciaPercorrida, corrida.getDistanciaTotal());
-
-            System.out.println(getName() + " avançou " + salto + "m e está em " + distanciaExibida + "m");
+            corrida.notificarAtualizacao();
 
             if (distanciaPercorrida >= corrida.getDistanciaTotal()) {
                 corrida.registrarVencedor(this);
+                corrida.notificarAtualizacao();
                 break;
             }
 
             try {
-                int tempoEspera = random.nextInt(401) + 100; // 100 a 500 ms
+                int tempoEspera = random.nextInt(401) + 100;
                 Thread.sleep(tempoEspera);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                System.out.println(getName() + " foi interrompido.");
                 break;
             }
         }
